@@ -3,10 +3,11 @@ name = "home_delivery"
 version = "1.0.0"
 edition = "2021"
 authors = ["Rob Hansen <rob@hansen.engineering>"]
-license = "Apache 2.0"
-license-file = "LICENSE.txt"
+license = "Apache-2.0"
 readme = "README.md"
 description = "Moves files between two directories on a schedule"
+homepage = "https://github.com/rjhansen/home_delivery"
+repository = "https://github.com/rjhansen/home_delivery"
 
 [dependencies]
 clap = { version = "4.5.28", features = ["derive"] }
