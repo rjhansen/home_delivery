@@ -1,0 +1,21 @@
+appenders:
+  screen:
+    kind: console
+    encoder:
+      pattern: "{h({d(%Y-%m-%dT%H:%M:%SZ)(utc)} - {l}: {m}{n})}"
+  file:
+    kind: rolling_file
+    path: "log/home_delivery.txt"
+    encoder:
+      pattern: "{d(%Y-%m-%dT%H:%M:%SZ)(utc)} - {h({l})}: {m}{n}"
+    policy:
+      trigger:
+        kind: size
+        limit: 50kb
+      roller:
+        kind: delete
+root:
+  level: info
+  appenders:
+    - screen
+    - file
