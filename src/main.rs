@@ -53,17 +53,17 @@ fn main() {
     info!("home_delivery is starting");
     loop {
         info!("polling {}", source.to_str().unwrap());
-        let total_files = filenames_with_timestamps(source).len();
-        let deliverables: Vec<(String, DateTime<Utc>)> = filenames_with_timestamps(source)
+        let all_files = filenames_with_timestamps(source);
+        let deliverables: Vec<(String, DateTime<Utc>)> = all_files
             .clone()
             .into_iter()
             .filter(|(_, date)| date < &Utc::now())
             .collect();
-        if 0 == total_files {
+        if 0 == all_files.len() {
             info!("no files left — exiting normally");
             exit(0);
-        } else if 0 < deliverables.len() {
-            info!("{} file(s), {} ready for delivery", total_files, deliverables.len());
+        } else {
+            info!("{} file(s), {} ready for delivery", all_files.len(), deliverables.len());
             deliver(deliverables, destination);
         }
         sleep_to_top_of_minute();
