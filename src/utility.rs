@@ -14,8 +14,11 @@ lazy_static! {
 pub fn sanity_check(source: &Path, destination: &Path, config: &String) {
     let source_ok = source.exists() && source.is_dir();
     let destination_ok = destination.exists() && destination.is_dir();
-    let config_ok = Path::new(config).exists() && Path::new(config).is_file();
-    
+    let config_ok = {
+        let configpath = Path::new(config);
+        configpath.exists() && configpath.is_file()
+    };
+
     if !(source_ok && destination_ok && config_ok) {
         error!("Error: invalid parameters. Try “--help” for help.");
         exit(1);
@@ -28,17 +31,21 @@ pub fn sleep_to_top_of_minute() {
         (now + Duration::minutes(1))
             .format("%Y-%m-%dT%H:%M:00Z")
             .to_string()
-            .as_str())
-        .unwrap()
-        .to_utc();
-    let duration = (next_minute - now).to_std().unwrap();
-    sleep(duration);
+            .as_str(),
+    )
+    .unwrap()
+    .to_utc();
+    sleep(
+        (next_minute - now)
+            .to_std()
+            .unwrap_or_else(|_| core::time::Duration::from_secs(60)),
+    );
 }
 
 pub fn filenames_with_timestamps(src: &Path) -> Vec<(String, DateTime<Utc>)> {
-    let mut rv: Vec<(String, DateTime<Utc>)> = vec!();
+    let mut rv: Vec<(String, DateTime<Utc>)> = vec![];
     let contents;
-    let mut matching_filenames = vec!();
+    let mut matching_filenames = vec![];
 
     // Step one: ensure the directory is readable.
     match src.read_dir() {
@@ -75,6 +82,7 @@ pub fn filenames_with_timestamps(src: &Path) -> Vec<(String, DateTime<Utc>)> {
             warn!("error getting directory entry");
         }
     }
+
 
     // Step three: munge timestamps and create a data structure of filename and
     // delivery time
