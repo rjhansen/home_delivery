@@ -2,7 +2,7 @@ use std::path::Path;
 use std::process::exit;
 use std::thread::sleep;
 use chrono::{DateTime, Duration, Utc};
-use log::{error, info};
+use log::{error, info, warn};
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -53,118 +53,89 @@ pub fn filenames_with_timestamps(src: &Path) -> Vec<(String, DateTime<Utc>)> {
 
     // Step two: collect filenames matching the regex
     for entry in contents {
-        match entry {
-            Err(e) => {
-                error!("error reading source directory entry: {}", e);
-                continue;
-            },
-            Ok(direntry) => {
-                if !direntry.path().is_file() {
-                    info!("Skipping non-file {}", direntry.path().display());
-                    continue;
-                }
-                match direntry.path().file_name() {
-                    None => {
-                        error!("couldn’t get file name");
-                        continue;
-                    },
-                    Some(file_name) => match file_name.to_str() {
-                        None => {
-                            error!("couldn’t convert file name to Unicode string");
-                            continue;
+        if let Ok(dir_entry) = entry {
+            if dir_entry.path().is_file() {
+                if let Some(filename) = dir_entry.file_name().to_str() {
+                    if let Some(_) = RE.captures(filename) {
+                        if let Some(good_name) = dir_entry.path().to_str() {
+                            matching_filenames.push(good_name.to_string());
+                        } else {
+                            info!("invalid character in file path: skipping");
                         }
-                        Some(f) => {
-                            match RE.captures(f) {
-                                None => {
-                                    continue;
-                                },
-                                Some(_) => {
-                                    match direntry.path().to_str() {
-                                        None => {
-                                            error!("couldn’t convert dirpath to Unicode string");
-                                            continue;
-                                        },
-                                        Some(g) => {
-                                            info!("found {}", g);
-                                            matching_filenames.push(g.to_string());
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    } else {
+                        info!("file '{}' is not a deliverable", filename);
                     }
+                } else {
+                    warn!("invalid character in file name: skipping");
                 }
+            } else {
+                info!("skipping a non-file");
             }
+        } else {
+            warn!("error getting directory entry");
         }
     }
 
     // Step three: munge timestamps and create a data structure of filename and
     // delivery time
     for path in matching_filenames {
-        let capture;
-        match RE.captures(path.as_str()) {
-            None => {
+        if let Some(capture) = RE.captures(&path) {
+            let day: &str;
+            let hour: &str;
+            let minute: &str;
+
+            if let Some(d) = capture.name("day") {
+                day = d.as_str();
+            } else {
+                day = "0";
+            };
+            if let Some(h) = capture.name("hour") {
+                hour = h.as_str();
+            } else {
+                hour = "00";
+            };
+            if let Some(m) = capture.name("minute") {
+                minute = m.as_str();
+            } else {
+                minute = "00";
+            }
+            // sanity-check: a file with an invalid timestamp won't be picked up
+            if hour.parse::<u32>().unwrap() >= 24 || minute.parse::<u32>().unwrap() >= 60 {
                 continue;
             }
-            Some(c) => {
-                capture = c;
-            }
-        }
-        let day;
-        let hour;
-        let minute;
-        
-        day = match capture.name("day") {
-            Some(cap) => cap.as_str(),
-            None => "0",
-        };
-        hour = match capture.name("hour") {
-            Some(cap) => cap.as_str(),
-            None => "00"
-        };
-        minute = match capture.name("minute") {
-            Some(cap) => cap.as_str(),
-            None => "00"
-        };
-
-        // sanity-check: a file with an invalid timestamp won't be picked up
-        if hour.parse::<u32>().unwrap() < 24 && minute.parse::<u32>().unwrap() < 60 {
-            let date = (Utc::now() + Duration::seconds(86400 * day.parse::<i64>().unwrap()))
+            let days = day.parse::<i64>().unwrap_or(0);
+            let duration = Duration::seconds(86400 * days);
+            let date_string = (Utc::now() + duration)
                 .format("%Y-%m-%d")
                 .to_string();
-            rv.push((
-                path.to_string(),
-                DateTime::parse_from_rfc3339(format!("{}T{}:{}:00Z", date, hour, minute).as_str())
+            let rfc3339_string = format!("{}T{}:{}:00Z",
+                                      date_string,
+                                      hour,
+                                      minute);
+            let rfc3339 =
+                DateTime::parse_from_rfc3339(&rfc3339_string.as_str())
                     .unwrap()
-                    .to_utc()
-            ));
+                    .to_utc();
+            rv.push((path.to_string(), rfc3339));
         }
-    };
-
+    }
     rv.sort_by(|a, b| a.1.cmp(&b.1));
     rv
 }
 
-pub fn deliver(filenames: Vec<(String, DateTime<Utc>)>, destination: &Path) {
-    for (path, _) in filenames {
-        let name = Path::new(path.as_str()).file_name().unwrap().to_str().unwrap();
-        info!(
-            "moving {} to {}",
-            path.to_string(),
-            destination.join(name).to_str().unwrap()
-        );
-        match std::fs::copy(path.as_str(), destination.join(name)) {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Error copying file: {}", e);
-                exit(1);
-            }
-        }
-        match std::fs::remove_file(path) {
-            Ok(_) => {}
-            Err(e) => {
-                error!("Error removing file: {}", e);
-                exit(1);
+pub fn deliver(filenames: Vec<String>, destination: &Path) {
+    for path in filenames {
+        if let Some(name_1) = Path::new(&path).file_name() {
+            if let Some(name_2) = name_1.to_str() {
+                if let Some(dest) = destination.join(name_2).to_str() {
+                    info!("moving {} to {}", &path, dest);
+                    if let Err(e) = std::fs::copy(&path, &dest) {
+                        error!("Error copying file {}: {}", &path, e);
+                    }
+                    if let Err(e) = std::fs::remove_file(&path) {
+                        error!("Error moving file {}: {}", &path, e);
+                    }
+                }
             }
         }
     }

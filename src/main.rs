@@ -5,7 +5,7 @@ use log::info;
 use log4rs;
 use std::path::Path;
 use std::process::exit;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use utility::{deliver, filenames_with_timestamps, sleep_to_top_of_minute, sanity_check};
 
 #[derive(Parser, Debug)]
@@ -54,10 +54,11 @@ fn main() {
     loop {
         info!("polling {}", source.to_str().unwrap());
         let all_files = filenames_with_timestamps(source);
-        let deliverables: Vec<(String, DateTime<Utc>)> = all_files
+        let deliverables: Vec<String> = all_files
             .clone()
             .into_iter()
             .filter(|(_, date)| date < &Utc::now())
+            .map(|(path, _)| path)
             .collect();
         if 0 == all_files.len() {
             info!("no files left — exiting normally");
