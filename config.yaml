@@ -7,7 +7,7 @@ appenders:
     kind: rolling_file
     path: "log/home_delivery.txt"
     encoder:
-      pattern: "{d(%Y-%m-%dT%H:%M:%SZ)(utc)} - {h({l})}: {m}{n}"
+      pattern: "{h({d(%Y-%m-%dT%H:%M:%SZ)(utc)} - {l}: {m}{n})}"
     policy:
       trigger:
         kind: size

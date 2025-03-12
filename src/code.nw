@@ -1,0 +1,914 @@
+\documentclass[10pt,letterpaper,twosided,notitlepage]{book}
+
+% process with noweb -delay
+
+\usepackage[some]{background}
+\usepackage{lipsum}
+\usepackage{textcomp}
+\usepackage[x11names]{xcolor}
+\usepackage{mathtools}
+\usepackage{geometry}
+\usepackage{merriweather}
+\usepackage{tabularray}
+\usepackage{hyperref}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\hypersetup{
+    colorlinks = true,
+    allcolors = blue
+}
+\usepackage{url}
+\usepackage{noweb}
+\newcommand{\src}{\textsc{src}}
+\newcommand{\dst}{\textsc{dst}}
+
+
+\definecolor{titlepagecolor}{cmyk}{1,.60,0,.40}
+
+\DeclareFixedFont{\bigsf}{OT1}{ptm}{b}{n}{1.5cm}
+
+\backgroundsetup{
+scale=1,
+angle=0,
+opacity=1,
+contents={\begin{tikzpicture}[remember picture,overlay]
+ \path [fill=titlepagecolor] (-0.5\paperwidth,5) rectangle (0.5\paperwidth,10);  
+\end{tikzpicture}}
+}
+\makeatletter                       
+\def\printauthor{%
+    {\large \@author}\\
+    Documenting Home Delivery 1.1}
+\makeatother
+\author{\href{mailto:rob@hansen.engineering?subject=Home\%20Delivery\%201.1}{Rob Hansen}}
+
+\begin{document}
+\begin{titlepage}
+\BgThispage
+\newgeometry{left=1cm,right=4cm}
+\vspace*{2cm}
+\noindent
+\textcolor{white}{\bigsf Home Delivery}
+\vspace*{2.5cm}\par
+\noindent
+\begin{minipage}{0.35\linewidth}
+    \begin{flushright}
+        \printauthor
+    \end{flushright}
+\end{minipage} \hspace{15pt}
+%
+\begin{minipage}{0.02\linewidth}
+    \rule{1pt}{175pt}
+\end{minipage} \hspace{-10pt}
+%
+\end{titlepage}
+\restoregeometry
+\thispagestyle{empty}
+\clearpage
+\section*{Changelog:}
+\begin{itemize}
+  \item 1.0: initial release
+  \item 1.0.1: added a footnote clarifying our estimation of look-down angles assumes Euclidean geometry, whereas our later detailed look is non-Euclidean.  This edit has no effect on the overall conclusions.
+  \item 1.0.2: discovered I accidentally truncated in the fourth significant figure of the viewing angle calculation, instead of properly rounding.  This error was minor enough to get lost in rounding later on, but was still corrected in the interests of presenting orthodox mathematics.  A brief discussion of the dimensionality of Dawes' limit was appended in a footnote, and another footnote was added clarifying how I'm abusing vector notation for geometric purposes.  These edits have no effect on the overall conclusions.
+  \item 1.0.3: used an angle sum equation to further reduce the trig and get rid of our last stray $\frac{\pi}{2}$.
+  \item 1.0.4: updated satellite observations from the amateur astronomy community: now using Cees Bassa's numbers.  You can follow him on Twitter as {\tt @cgbassa}.  Also corrected a minor grammatical error in the text about Aussie geopolitics: ``more dangerous'' has been replaced with ''more endangered''.
+\end{itemize}
+\clearpage
+\thispagestyle{empty}
+\tableofcontents
+
+\clearpage\thispagestyle{empty}\mbox{}\clearpage
+
+\setcounter{page}{1}
+
+\chapter{Preliminaries}
+\section{Foreword}
+
+A friend came to me with the following statement of work:
+
+``Create a command-line application for Windows 11 or later which
+has no dependencies. It must take two parameters, \src{} and \dst .
+Upon execution it looks for any files in \src{} which match a certain
+pattern. That pattern denotes a future date and time in Universal
+Coordinated Time (\textsc{utc}, also called `Zulu'). For instance, 
+the file \textsc{foo-0800.txt} must be delivered from \src{} to \dst{}
+at 0800Z on the current day. If it is already past 0800Z, it must
+be delivered immediately. Further, the time may be prefixed with a 
+number followed by \textsc{d}, denoting a day or days in the future:
+\textsc{foo-3d0800.txt} must be delivered at 0800Z three days hence.
+Zero is a valid day parameter. Upon making a round of deliveries,
+the program must wait for one minute and check again. New files may
+be introduced to \src{} during program execution and must be recognized
+and delivered appropriately.''
+
+This application meets all requirements.
+
+\section{Usage}
+\texttt{home\_delivery -{}-source} \textsc{src} \texttt{-{}-destination} \textsc{dst} \texttt{-{}-config} \textsc{cfg}
+
+\ldots where \textsc{src} is the path to the source directory,
+\textsc{dst} the path to the destination directory, and \textsc{cfg}
+the path to the logger configuration file. E.g., to move files from 
+\texttt{source\_dir} to \texttt{dest\_dir} using longger configuration
+\texttt{log\_config.yaml}, you would type:
+
+\texttt{home\_delivery -{}-source source\_dir -{}-destination dest\_dir -{}-config log\_config.yaml}
+
+You may also use \texttt{-s}, \texttt{-d}, and \texttt{-c} as shortcuts.
+
+It also understands the \texttt{-h}/\texttt{-{}-help} and \texttt{-V}/\texttt{-{}-version} flags.
+
+\section{Versioning}
+This is Home Delivery 1.1 (March 11, 2025).
+
+\section{Homepage and bug reporting}
+This application is hosted on 
+\href{https://github.com/rjhansen/home\_delivery}{GitHub}.
+\footnote{\textit{https://github.com/rjhansen/home\_delivery}} There, you
+can find an ``Issues'' page, which is the project
+\href{https://github.com/rjhansen/home\_delivery/issues}{bug tracker}.
+\footnote{\textit{https://github.com/rjhansen/home\_delivery/issues}}
+
+\section{Licensing}
+The source code is released under the
+\href{https://www.apache.org/licenses/LICENSE-2.0}{Apache 2.0 license};
+\footnote{\textit{https://www.apache.org/licenses/LICENSE-2.0}} the 
+documentation, the 
+\href{https://creativecommons.org/licenses/by-nd/4.0/deed.en}{Creative Commons 4.0 Attribution-NoDerivs}
+license.
+\footnote{\textit{https://creativecommons.org/licenses/by-nd/4.0/deed.en}}
+
+\section{About this document}
+This is a literate program in the style of Donald E.\ Knuth, using
+Norman Ramsey's excellent 
+\href{https://www.cs.tufts.edu/~nr/noweb/}{Noweb system}.
+\footnote{\textit{https://www.cs.tufts.edu/~nr/noweb/}} 
+The program and documentation
+are a fused whole found in \texttt{src/code.nw}, and prior to Git
+checkin the documentation and code are extracted and generated so 
+that they may always be in sync.
+
+Specifically, the code in this document was used to create files with
+the following \textsc{md5} checksums:
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{src/main.rs} & \texttt{\textsc{MAIN_MD5}}\\
+    \hline
+    \textbf{src/utility.rs} & \texttt{\textsc{UTILITY_MD5}}\\
+    \hline
+    \textbf{Cargo.toml} & \texttt{\textsc{CARGO_MD5}}\\
+    \hline
+    \textbf{config.yaml} & \texttt{\textsc{CONFIG_MD5}}\\
+    \hline
+\end{longtblr}
+
+\section{The application}
+This application was written using Rust 1.85 and should compile cleanly
+on Windows 11 (or later) targets. It has also been successfully tested on
+Fedora Linux 41 and MacOS Sequoia 15.3.1. There are no per-platform
+differences.
+
+\section{Hacking}
+
+Two different build systems are provided: a Bash script for \textsc{unix} hosts
+(to include MacOS) and a PowerShell 7.5 script (for Windows hosts). Run these
+\texttt{noweb-build} scripts to extract source code from the NoWeb file and 
+build the documentation and application.
+
+You will need:
+
+\begin{enumerate}
+    \item
+    A Rust development environment on your system \texttt{PATH}
+    \item
+    A Texlive installation on your system \texttt{PATH}
+    \item
+    Either the Bourne Again shell or PowerShell 7.5 or later
+    \item
+    \textbf{MacOS only:} \texttt{gsed} installed from Homebrew
+\end{enumerate}
+
+\chapter{\texttt{Cargo.toml}}
+The following table lists the third-party libraries we depend upon for
+compilation,\footnote{\textit{Not} execution. Home Delivery is free of
+external dependencies in its runtime, but it needs these libraries to
+compile.} their required version numbers, and a brief description of why
+we need them. Each library may bring in compile-time dependencies of its
+own.
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{1cm} | p{6cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{clap} & 4.5.$x$ & Command line parsing\\
+    \hline
+    \textbf{log} & 0.4.$x$ & Standard logging fa\c{c}ade\\
+    \hline
+    \textbf{log4rs} & 1.3.$x$ & The particular logging implementation\\
+    \hline
+    \textbf{regex} & 1.11.$x$ & Provides regular expressions\\
+    \hline
+    \textbf{lazy\_static} & 1.5.$x$ & Provides static initialization\\
+    \hline
+    \textbf{chrono} & 0.4.$x$ & Adds \textsc{utc} capabilities to the standard
+    \texttt{DateTime} class\\
+    \hline
+\end{longtblr}
+
+<<Cargo.toml>>=
+[package]
+name = "home_delivery"
+version = "1.1.0"
+edition = "2021"
+authors = ["Rob Hansen <rob@hansen.engineering>"]
+license = "Apache-2.0"
+readme = "README.md"
+description = "Moves files between two directories on a schedule"
+homepage = "https://github.com/rjhansen/home_delivery"
+repository = "https://github.com/rjhansen/home_delivery.git"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+log = "0.4"
+log4rs = "1.3"
+regex = "1.11"
+lazy_static = "1.5"
+chrono = "0.4"
+
+[[bin]]
+name = "home_delivery"
+
+@
+\chapter{\texttt{config.yaml}}
+This is a simple logging configuration file. To make sense of it,
+please see the \texttt{log4rs} documentation.
+
+<<config.yaml>>=
+appenders:
+  screen:
+    kind: console
+    encoder:
+      pattern: "{h({d(%Y-%m-%dT%H:%M:%SZ)(utc)} - {l}: {m}{n})}"
+  file:
+    kind: rolling_file
+    path: "log/home_delivery.txt"
+    encoder:
+      pattern: "{h({d(%Y-%m-%dT%H:%M:%SZ)(utc)} - {l}: {m}{n})}"
+    policy:
+      trigger:
+        kind: size
+        limit: 50kb
+      roller:
+        kind: delete
+root:
+  level: info
+  appenders:
+    - screen
+    - file
+@
+\chapter{\texttt{main.rs}}
+In its broad strokes, \textit{main.rs} looks like:
+
+<<main.rs>>=
+    <<main: imports>>
+    <<main: argument parsing>>
+    <<function: get\_current\_deliverables>>
+    <<function: main>>
+
+@
+We will address each in turn.
+\section{Imports}
+
+We use a number of third party packages, all listed in \texttt{Cargo.toml}.
+In our \texttt{main.rs} file we begin by declaring a utility module we'll
+be using as well as the third-party code we're importing.
+
+<<main: imports>>=
+mod utility;
+
+use chrono::{DateTime, Utc};
+use clap::Parser;
+use log::info;
+use log4rs;
+use std::path::Path;
+use std::process::exit;
+use utility::{deliver, filenames_with_timestamps,
+              sanity_check, sleep_to_top_of_minute};
+
+@
+\section{Argument parsing}
+Argument parsing is provided by the
+\href{https://docs.rs/clap/latest/clap/}{Clap 4.5} crate, using
+the new Derive \textsc{api}.
+
+<<main: argument parsing>>=
+#[derive(Parser, Debug)]
+#[command(version)]
+#[command(about =
+    "Delivers files from one directory to another on a schedule.")]
+#[command(author =
+    "Rob Hansen <rob@hansen.engineering>")]
+#[command(before_help =
+    "                    ** NOTE: ALL TIMES ARE IN UTC **\
+")]
+#[command(after_help =
+    "                    ** NOTE: ALL TIMES ARE IN UTC **\
+")]
+#[command(help_template(
+    "\
+{before-help}{name} {version}
+Copyright (c) 2025 by {author}
+Homepage: https://github.com/rjhansen/home_delivery
+
+This is open source software distributed under terms of the Apache
+Software Foundation's Apache-2.0 license. For the full text of the
+license, please see https://www.apache.org/licenses/LICENSE-2.0.html
+
+{about-with-newline}
+{usage-heading} {usage}
+
+{all-args}{after-help}
+"
+))]
+struct Args {
+    #[arg(short, long,
+        long_help = "Path to source directory")]
+    source: String,
+
+    #[arg(short, long,
+        long_help = "Path to destination directory")]
+    destination: String,
+
+    #[arg(short, long,
+        long_help = "Path to logging configuration file")]
+    config: String,
+}
+
+@
+\section{Function: \texttt{get\_current\_deliverables}}
+
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & A borrowed reference to an immutable vector of 
+    two-element tuples, where each tuple
+    consists of a Unicode string representing a complete path and 
+    an \textsc{rfc3339}-formatted timestamp representing when it 
+    should be delivered.\\
+    \hline
+    \textbf{Output} & A vector of Unicode strings where each string
+    represents a complete path to a file which should be delivered
+    now.\\
+    \hline
+    \textbf{Side effects} & None \\
+    \hline
+    \textbf{Called by} & \texttt{main()} in \texttt{main.rs}.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & None. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+<<function: get\_current\_deliverables>>=
+fn get_current_deliverables(deliv: &Vec<(String, DateTime<Utc>)>) 
+    -> Vec<String> {
+    deliv.clone()
+        .into_iter()
+        .filter(|(_, date)| date < &Utc::now())
+        .map(|(path, _)| path)
+        .collect::<Vec<String>>()
+}
+@
+\section{Function: \texttt{main}}
+The \texttt{main} function is fairly straightforward, although it makes
+heavy use of utility functions defined elsewhere.
+
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & Command-line flags.\\
+    \hline
+    \textbf{Output} & Logging messages (if configured).\\
+    \hline
+    \textbf{Side effects} & None \\
+    \hline
+    \textbf{Called by} & Program execution.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & The program terminates with an error code
+    if valid parameters aren't specified for \src , \dst , and the logger
+    configuration file. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+<<function: main>>=
+fn main() {
+    <<main: housekeeping>>
+    <<main: sanity checking>>
+    <<main: initialize logging>>
+    <<main: loop>>
+}
+
+@
+\subsection{Housekeeping}
+Following standard Rust practice, we open our function by declaring a handful
+of bindings, all of them immutable.
+<<main: housekeeping>>=
+    let args = Args::parse();
+    let source = Path::new(&args.source);
+    let destination = Path::new(&args.destination);
+    let config = &args.config;
+    let source_str: &str;
+@
+
+\subsection{Sanity checking}
+<<main: sanity checking>>=
+    sanity_check(source, destination, config);
+    source_str = source.to_str().unwrap_or_else(|| {
+        eprintln!("Error: source path is not a valid UTF-8 string");
+        exit(1);
+    });
+@
+
+\subsection{Initializing logging}
+<<main: initialize logging>>=
+    log4rs::init_file(config, Default::default())
+        .expect("couldn't init logger!");
+    info!("home_delivery is starting");
+@
+\subsection{Main loop}
+<<main: loop>>=
+    loop {
+        info!("polling {:?}", source_str);
+        let all_deliverables = filenames_with_timestamps(source);
+        let deliver_now = get_current_deliverables(&all_deliverables);
+        if deliver_now.is_empty() {
+            info!("no files left — exiting normally");
+            exit(0);
+        }
+        info!("{} file(s) ready for delivery",
+            deliver_now.len());
+        deliver(&deliver_now, destination);
+        sleep_to_top_of_minute();
+    }
+@
+
+\chapter{\texttt{utility.rs}}
+This file is a sort of junk drawer for various functions useful in achieving desired
+application functionality. Its structure is fairly conventional:
+
+<<utility.rs>>=
+<<utility: imports>>
+<<utility: static initialization>>
+<<function: sanity\_check>>
+<<function: sleep\_to\_top\_of\_minute>>
+<<function: read\_directory>>
+<<function: capture\_to\_rfc3339>>
+<<function: find\_matching\_files>>
+<<function: filenames\_with\_timestamps>>
+<<function: deliver>>
+@
+Each is covered in its own section.
+
+\section{Imports}
+This is essentially boilerplate code: there's nothing of particular interest,
+nor deserving of particular explanation, here.
+
+<<utility: imports>>=
+    use chrono::{DateTime, Duration, Utc};
+    use lazy_static::lazy_static;
+    use log::{error, info, warn};
+    use regex::Regex;
+    use std::fs::{DirEntry, ReadDir};
+    use std::path::Path;
+    use std::process::exit;
+    use std::thread::sleep;
+
+@
+\section{Static initialization}
+Rather than recompile our filename recognition regex unnecessarily every
+time we run the file harvesting function, we statically initialize it here.
+Please note it has no visibility outside this file.
+
+Further, note the use of \texttt{.unwrap()}. Although this is normally a 
+bad code smell, here it's justified by the fact the regex is well-debugged,
+not changing, and not subject to the whims of the user. This \texttt{.unwrap()}
+is about as safe as we can make it.
+
+<<utility: static initialization>>=
+    static REXP: &str =
+        r"^.*(((?<day>\d+)[dD])?(?<hour>\d\d)(?<minute>\d\d))(.*)$";
+    lazy_static! {
+        static ref RE: Regex = Regex::new(REXP).unwrap();
+    }
+
+@
+\section{Function: \texttt{sanity\_check}}
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & \texttt{source}, a borrowed reference to a
+    \texttt{Path}; \texttt{destination}, a borrowed reference to a
+    \texttt{Path}; \texttt{config}, a borrowed reference to a
+    \texttt{String}.\\
+    \hline
+    \textbf{Output} & \texttt{()}, or terminates execution.\\
+    \hline
+    \textbf{Side effects} & None \\
+    \hline
+    \textbf{Called by} & \texttt{main()} in \texttt{main.rs}.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & The program terminates with an error code
+    if valid parameters aren't specified for \src , \dst , and the logger
+    configuration file. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+This function ensures the user-specified command line parameters
+meet at least basic sanity checks.
+
+<<function: sanity\_check>>=
+pub fn sanity_check(source: &Path, destination: &Path, 
+    config: &String) {
+    let source_ok = source.exists() && source.is_dir();
+    let destination_ok = destination.exists() && 
+        destination.is_dir();
+    let config_ok = {
+        let configpath = Path::new(config);
+        configpath.exists() && configpath.is_file()
+    };
+
+    if !(source_ok && destination_ok && config_ok) {
+        error!("Error: invalid parameters. Try '--help' for help.");
+        exit(1);
+    }
+}
+
+@
+\section{Function: \texttt{sleep\_to\_top\_of\_minute}}
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & None.\\
+    \hline
+    \textbf{Output} & \texttt{()}.\\
+    \hline
+    \textbf{Side effects} & Pauses execution between 1-60 seconds. \\
+    \hline
+    \textbf{Called by} & \texttt{main()} in \texttt{main.rs}.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & Recovers sensibly from internal
+    errors. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+This function is a little more complicated than one would like. We take
+the current time as and advance it one minute (potentially adding us into
+a new day, month, or year), then convert that into an \textsc{rfc3339}-formatted
+string with the seconds field zeroed out. Converting that back into a 
+\texttt{DateTime} lets us compute the difference between the two timestamps,
+representing how many seconds to sleep to get to the top of the next minute.
+
+By all sense, there shouldn't be any way for there to be format conversion
+errors. In the strange occasion there is one anyway, we trap the error and simply
+sleep for one minute in order to continue execution in a somewhat degraded statement
+(no longer guaranteed to be pausing until the top of the minute).
+
+<<function: sleep\_to\_top\_of\_minute>>=
+pub fn sleep_to_top_of_minute() {
+    let now = Utc::now();
+    let next_minute = now + Duration::minutes(1);
+    let top_of = next_minute.format("%Y-%m-%dT%H:%M:00Z").to_string();
+    if let Ok(future) = DateTime::parse_from_rfc3339(top_of.as_str()) {
+        if let Ok(as_std) = (future.to_utc() - now).to_std() {
+            sleep(as_std);
+        } else {
+            sleep(Duration::minutes(1).to_std().unwrap());
+        }
+    } else {
+        sleep(Duration::minutes(1).to_std().unwrap());
+    }
+}
+
+@
+\section{Function: \texttt{read\_directory}}
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & A borrowed reference to a \texttt{Path}.\\
+    \hline
+    \textbf{Output} & A set of directory entries, or program termination.\\
+    \hline
+    \textbf{Side effects} & May terminate program execution. \\
+    \hline
+    \textbf{Called by} & \texttt{files\_with\_timestamps()} in \texttt{utility.rs}.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & Terminates execution on error. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+<<function: read\_directory>>=
+fn read_directory(path: &Path) -> ReadDir {
+    match path.read_dir() {
+        Ok(dir) => dir,
+        Err(e) => {
+            error!("Error reading source directory: {}", e);
+            exit(1);
+        }
+    }
+}
+
+@
+\section{Function: \texttt{find\_matching\_files}}
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & Takes ownership of a \texttt{ReadDir}.\\
+    \hline
+    \textbf{Output} & A vector of \texttt{String}s representing filenames
+    in the input directory which match our statically-initialized regex.\\
+    \hline
+    \textbf{Side effects} & None. \\
+    \hline
+    \textbf{Called by} & \texttt{main()} in \texttt{main.rs}.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & Recovers gracefully and logs. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+We begin by initializing our return value, and filtering from our input
+set those files which have valid entries. Those valid entries are ultimately
+collected into a vector of \texttt{String}s representing complete path names
+and are returned.
+
+<<function: find\_matching\_files>>=
+fn find_matching_files(contents: ReadDir) -> Vec<String> {
+    let mut matching_filenames = Vec::<String>::new();
+    <<compile entries>>
+    for dir_entry in entries {
+        if let Some(filename) = dir_entry.file_name().to_str() {
+            if let Some(_) = RE.captures(filename) {
+                if let Some(good_name) = dir_entry.path().to_str() {
+                    matching_filenames.push(good_name.to_string());
+                    <<fmf: error reporting>>
+    matching_filenames
+}
+
+@
+\subsection{Compiling entries}
+Compiling the entries is a fairly straightforward pipeline of filter and
+map operations.
+
+<<compile entries>>=
+let entries = contents
+    .filter_map(Result::ok)
+    .filter(|entry| entry.path().is_file())
+    .collect::<Vec<DirEntry>>();
+
+@
+\subsection{Error reporting}
+Error reporting is handled through the logging facility. In no case will
+errors be propagated to the caller, nor result in termination of the
+function or program: we just stand up, dust ourselves off, and continue.
+
+<<fmf: error reporting>>=
+                } else {
+                        info!("invalid character in file path: skipping");
+                }
+            } else {
+                info!("file '{}' is not a deliverable", filename);
+            }
+        } else {
+            warn!("invalid character in file name: skipping");
+        }
+    }
+
+@
+\section{Function: \texttt{capture\_to\_rfc3339}}
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & Borrows a reference to a \texttt{regex::Captures}.\\
+    \hline
+    \textbf{Output} & An \texttt{Option<DateTime<Utc>>} representing
+    the \textsc{utc} time described by the captured timestamp.\\
+    \hline
+    \textbf{Side effects} & None. \\
+    \hline
+    \textbf{Called by} & \texttt{filenames\_with\_timestamps()} in \texttt{utility.rs}.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & Recovers gracefully and continues execution. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+<<function: capture\_to\_rfc3339>>=
+fn capture_to_rfc3339(capture: &regex::Captures) -> Option<DateTime<Utc>> {
+    <<ctf: binding initialization>>
+    <<ctf: sanity check>>
+
+    let days = day.parse::<i64>().unwrap_or(0);
+    let duration = Duration::seconds(86400 * days);
+    let date_string = (Utc::now() + duration).format("%Y-%m-%d").to_string();
+    let rfc3339_string = format!("{}T{}:{}:00Z", date_string, hour, minute);
+    Some(
+        DateTime::parse_from_rfc3339(&rfc3339_string.as_str())
+            .unwrap()
+            .to_utc(),
+    )
+}
+
+@
+\subsection{Binding initialization}
+
+As is par for the course with Rust, initializing bindings is rather verbose.
+
+<<ctf: binding initialization>>=
+let day: &str;
+let hour: &str;
+let minute: &str;
+
+if let Some(d) = capture.name("day") {
+    day = d.as_str();
+} else {
+    day = "0";
+};
+
+if let Some(h) = capture.name("hour") {
+    hour = h.as_str();
+} else {
+    hour = "00";
+};
+
+if let Some(m) = capture.name("minute") {
+    minute = m.as_str();
+} else {
+    minute = "00";
+}
+
+@
+\subsection{Sanity check}
+
+<<ctf: sanity check>>=
+
+// sanity-check: a file with an invalid timestamp won't be picked up
+if hour.parse::<u32>().unwrap() >= 24 || 
+    minute.parse::<u32>().unwrap() >= 60 {
+    return None;
+}
+
+@
+\section{Function: \texttt{filenames\_with\_timestamps}}
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & Borrows a reference to a \texttt{Path}.\\
+    \hline
+    \textbf{Output} & A \texttt{Vec<(String, DateTime<Utc>)>} representing
+    the name of each file matching our statically assigned regex, and the 
+    \textsc{utc} time described by the captured timestamp.\\
+    \hline
+    \textbf{Side effects} & None. \\
+    \hline
+    \textbf{Called by} & \texttt{main()} in \texttt{main.rs}.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & Recovers gracefully and continues execution. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+<<function: filenames\_with\_timestamps>>=
+pub fn filenames_with_timestamps(src: &Path) 
+    -> Vec<(String, DateTime<Utc>)> {
+    let mut rv: Vec<(String, DateTime<Utc>)> = vec![];
+
+    for path in find_matching_files(read_directory(src)) {
+        if let Some(capture) = RE.captures(&path) {
+            if let Some(rfc3339) = capture_to_rfc3339(&capture) {
+                rv.push((path, rfc3339));
+            }
+        }
+    }
+    rv.sort_by(|a, b| a.1.cmp(&b.1));
+    rv
+}
+
+@
+\section{Function: \texttt{deliver}}
+\begin{longtblr}{
+    colspec = { | p{3cm} | p{7cm} | },
+    row{even} = {Ivory2},
+    width = \linewidth,
+    rowhead = 1
+  }
+  \hline
+    \textbf{Input} & Borrows a reference to a \texttt{Vec<String>}
+    denoting the file paths to be moved.\\
+    \hline
+    \textbf{Output} & \texttt{()}\\
+    \hline
+    \textbf{Side effects} & Reorganizes files on disk. \\
+    \hline
+    \textbf{Called by} & \texttt{main()} in \texttt{main.rs}.\\
+    \hline
+    \textbf{Memory-safe?} & Yes.\\
+    \hline
+    \textbf{Error handling?} & Recovers gracefully and continues execution. \\
+    \hline
+    \textbf{Bugs} & None known.\\
+    \hline
+\end{longtblr}
+
+Due to a bug in Rust, moving files between different Windows drives with
+\texttt{std::fs::move} is not supported. Hence, on all platforms we do a
+copy followed by removing the original.
+
+<<function: deliver>>=
+pub fn deliver(filenames: &Vec<String>, destination: &Path) {
+    for path in filenames {
+        if let Some(name_1) = Path::new(&path).file_name() {
+            if let Some(name_2) = name_1.to_str() {
+                if let Some(dest) = destination.join(name_2).to_str() {
+                    info!("moving {} to {}", &path, dest);
+                    if let Err(e) = std::fs::copy(&path, &dest) {
+                        error!("Error copying file {}: {}", &path, e);
+                    }
+                    if let Err(e) = std::fs::remove_file(&path) {
+                        error!("Error moving file {}: {}", &path, e);
+                    }
+                }
+            }
+        }
+    }
+}
+
+@
+\end{document}
