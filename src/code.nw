@@ -8,7 +8,8 @@
 \usepackage[x11names]{xcolor}
 \usepackage{mathtools}
 \usepackage{geometry}
-\usepackage{merriweather}
+%\usepackage{merriweather}
+\usepackage{concrete}
 \usepackage{tabularray}
 \usepackage{hyperref}
 \usepackage{colortbl}
@@ -68,11 +69,9 @@ contents={\begin{tikzpicture}[remember picture,overlay]
 \clearpage
 \section*{Changelog:}
 \begin{itemize}
-  \item 1.0: initial release
-  \item 1.0.1: added a footnote clarifying our estimation of look-down angles assumes Euclidean geometry, whereas our later detailed look is non-Euclidean.  This edit has no effect on the overall conclusions.
-  \item 1.0.2: discovered I accidentally truncated in the fourth significant figure of the viewing angle calculation, instead of properly rounding.  This error was minor enough to get lost in rounding later on, but was still corrected in the interests of presenting orthodox mathematics.  A brief discussion of the dimensionality of Dawes' limit was appended in a footnote, and another footnote was added clarifying how I'm abusing vector notation for geometric purposes.  These edits have no effect on the overall conclusions.
-  \item 1.0.3: used an angle sum equation to further reduce the trig and get rid of our last stray $\frac{\pi}{2}$.
-  \item 1.0.4: updated satellite observations from the amateur astronomy community: now using Cees Bassa's numbers.  You can follow him on Twitter as {\tt @cgbassa}.  Also corrected a minor grammatical error in the text about Aussie geopolitics: ``more dangerous'' has been replaced with ''more endangered''.
+  \item 1.0: initial release. No \textsc{pdf} documentation was provided.
+  \item 1.1: code restructuring, no new features. Full documentation provided.
+  Migrated to a Noweb-based build system.
 \end{itemize}
 \clearpage
 \thispagestyle{empty}

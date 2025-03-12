@@ -10,12 +10,18 @@ fi
 
 for x in main.rs utility.rs ;
 do
-notangle -R$x src/code.nw > src/$x
+rm -f src/$x
+cat common_header.rs > src/$x
+notangle -R$x src/code.nw >> src/$x
 rustfmt src/$x
 done
 
-notangle -RCargo.toml src/code.nw > Cargo.toml
-notangle -Rconfig.yaml src/code.nw > config.yaml
+for x in Cargo.toml config.yaml ;
+do
+rm -f $x
+cat common_header.toml > $x
+notangle -R$x src/code.nw >> $x
+done
 
 noweave -delay src/code.nw -x > HomeDelivery.tex
 md5main=`md5sum src/main.rs | cut -d " " -f 1`
