@@ -84,12 +84,10 @@ fn main() {
         info!("polling {:?}", source_str);
         let all_deliverables = filenames_with_timestamps(source);
         let deliver_now = get_current_deliverables(&all_deliverables);
-        if deliver_now.is_empty() {
-            info!("no files left — exiting normally");
-            exit(0);
+        if !deliver_now.is_empty() {
+            info!("{} file(s) ready for delivery", deliver_now.len());
+            deliver(&deliver_now, destination);
         }
-        info!("{} file(s) ready for delivery", deliver_now.len());
-        deliver(&deliver_now, destination);
         sleep_to_top_of_minute();
     }
 }

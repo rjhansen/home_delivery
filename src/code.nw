@@ -463,13 +463,10 @@ of bindings, all of them immutable.
         info!("polling {:?}", source_str);
         let all_deliverables = filenames_with_timestamps(source);
         let deliver_now = get_current_deliverables(&all_deliverables);
-        if deliver_now.is_empty() {
-            info!("no files left — exiting normally");
-            exit(0);
+        if !deliver_now.is_empty() {
+            info!("{} file(s) ready for delivery", deliver_now.len());
+            deliver(&deliver_now, destination);
         }
-        info!("{} file(s) ready for delivery",
-            deliver_now.len());
-        deliver(&deliver_now, destination);
         sleep_to_top_of_minute();
     }
 @
@@ -498,7 +495,7 @@ nor deserving of particular explanation, here.
 <<utility: imports>>=
     use chrono::{DateTime, Duration, Utc};
     use lazy_static::lazy_static;
-    use log::{error, info, warn};
+    use log::{error, info};
     use regex::Regex;
     use std::fs::{DirEntry, ReadDir};
     use std::path::Path;
@@ -696,45 +693,15 @@ and are returned.
 
 <<function: find\_matching\_files>>=
 fn find_matching_files(contents: ReadDir) -> Vec<String> {
-    let mut matching_filenames = Vec::<String>::new();
-    <<compile entries>>
-    for dir_entry in entries {
-        if let Some(filename) = dir_entry.file_name().to_str() {
-            if let Some(_) = RE.captures(filename) {
-                if let Some(good_name) = dir_entry.path().to_str() {
-                    matching_filenames.push(good_name.to_string());
-                    <<fmf: error reporting>>
-    matching_filenames
+    contents
+        .filter_map(Result::ok)
+        .filter(|e| e.path().is_file() && e.file_name().to_str().is_some())
+        .collect::<Vec<DirEntry>>()
+        .iter().map(|e| e.path().to_str().unwrap().to_owned())
+        .collect::<Vec<String>>()
+        .into_iter().filter(|entry| RE.captures(entry).is_some())
+        .collect::<Vec<String>>()
 }
-
-@
-\subsection{Compiling entries}
-Compiling the entries is a fairly straightforward pipeline of filter and
-map operations.
-
-<<compile entries>>=
-let entries = contents
-    .filter_map(Result::ok)
-    .filter(|entry| entry.path().is_file())
-    .collect::<Vec<DirEntry>>();
-
-@
-\subsection{Error reporting}
-Error reporting is handled through the logging facility. In no case will
-errors be propagated to the caller, nor result in termination of the
-function or program: we just stand up, dust ourselves off, and continue.
-
-<<fmf: error reporting>>=
-                } else {
-                        info!("invalid character in file path: skipping");
-                }
-            } else {
-                info!("file '{}' is not a deliverable", filename);
-            }
-        } else {
-            warn!("invalid character in file name: skipping");
-        }
-    }
 
 @
 \section{Function: \texttt{capture\_to\_rfc3339}}

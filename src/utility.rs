@@ -16,7 +16,7 @@
 
 use chrono::{DateTime, Duration, Utc};
 use lazy_static::lazy_static;
-use log::{error, info, warn};
+use log::{error, info};
 use regex::Regex;
 use std::fs::{DirEntry, ReadDir};
 use std::path::Path;
@@ -107,29 +107,16 @@ fn capture_to_rfc3339(capture: &regex::Captures) -> Option<DateTime<Utc>> {
 }
 
 fn find_matching_files(contents: ReadDir) -> Vec<String> {
-    let mut matching_filenames = Vec::<String>::new();
-    let entries = contents
+    contents
         .filter_map(Result::ok)
-        .filter(|entry| entry.path().is_file())
-        .collect::<Vec<DirEntry>>();
-
-    for dir_entry in entries {
-        if let Some(filename) = dir_entry.file_name().to_str() {
-            if let Some(_) = RE.captures(filename) {
-                if let Some(good_name) = dir_entry.path().to_str() {
-                    matching_filenames.push(good_name.to_string());
-                } else {
-                    info!("invalid character in file path: skipping");
-                }
-            } else {
-                info!("file '{}' is not a deliverable", filename);
-            }
-        } else {
-            warn!("invalid character in file name: skipping");
-        }
-    }
-
-    matching_filenames
+        .filter(|e| e.path().is_file() && e.file_name().to_str().is_some())
+        .collect::<Vec<DirEntry>>()
+        .iter()
+        .map(|e| e.path().to_str().unwrap().to_owned())
+        .collect::<Vec<String>>()
+        .into_iter()
+        .filter(|entry| RE.captures(entry).is_some())
+        .collect::<Vec<String>>()
 }
 
 pub fn filenames_with_timestamps(src: &Path) -> Vec<(String, DateTime<Utc>)> {
